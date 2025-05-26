@@ -1,16 +1,57 @@
 ![github_header_arcticwhales_offset](https://github.com/user-attachments/assets/90509c18-e4dd-44fc-93ab-bc196bf24f54)
 
-This is a repository for scripts used in analyzing Canadian Arctic bowhead whale (*Balaena mysticetus*), narwhal (*Monodon monoceros*), and beluga whale (*Delphinapterus leucas*) resequencing data for analyses to run gradient forest models and calculate genetic offsets. These scripts were executed on computing resources through the University of Manitoba and the Digitial Research Alliance of Canada. 
+This is a repository for code used in estimating genetic offsets in Arctic whales in the eastern Canadian Arctic and is associated with "Canadian Arctic whale genomic data and code to estimate genetic offsets" at https://zenodo.org/doi/10.5281/zenodo.15437796.
 
-A complementary repository "Arctic whales resequencing" provides scripts for starting with raw sequence files (corresponding to https://doi.org/10.1111/gcb.17528) and can be found here: https://github.com/edegreef/arctic-whales-resequencing. 
-SNP data and corresponding metadata used in the gradient forest and genetic offset analyses are available at https://doi.org/10.5281/zenodo.15105821.
+### Associated publication:
+de Greef, E., Müller, C., Snead A., Rivkin, L. R., Ferguson, S. H., Watt, C. A., Marcoux, M., Petersen, S. D., and Garroway, C. J. (2025). Identifying areas of potential risk based on future genetic adaptability in three Arctic whale species. *The American Naturalist*.
 
-Scripts in this current repository include:
-* Creating map with combined species range shapefiles
-* SNP filtering pipeline
-* Imputing with *beagle* and thinning dataset with *vcftools*
-* Extracting climate data with *sdmpredictors*
-* Running genoome scans and lfmms in *LEA*
-* SNP prep and formating for Gradient Forest
-* Pipeline for gradient forest analyses with *gradientForest*
-* Scaling and combining genetic offsets
+### Author names and contact information for first and last authors:
+Evelien de Greef (eveliendegreef@gmail.com), Claudio Müller, Anthony Snead, L. Ruth Rivkin, Steven H. Ferguson, Cortney A. Watt, Marianne Marcoux, Stephen D. Petersen, Colin J. Garroway (Colin.Garroway@umanitoba.ca) 
+
+### Study summary:
+We evaluated genetic offsets in Canadian Arctic bowhead whales (*Balaena mysticetus*), narwhal (*Monodon monoceros*), and beluga whales (*Delphinapterus leucas*). Through genotype-environment association models, we forecasted the degree of genetic mismatch Arctic whales may experience in future climate change scenarios. After estimating genetic offsets for each species separately, we then combined the offsets to identify shared regions of high and low maladaptive risk to climate change.
+
+### Overall information about code and data:
+Evelien de Greef is the lead responsible for collecting data and writing code. Claudio Müller prepared the beluga whale genomic variant dataset.
+
+## Description of CODE folders and files
+***Note about processing narwhal and bowhead whale raw data***: A previously published and complementary repository "Arctic whales resequencing" provides scripts for starting from raw sequence files for narwhal and bowhead whale data and can be found here: https://github.com/edegreef/arctic-whales-resequencing or https://doi.org/10.5281/zenodo.13845947. This corresponds to de Greef et al., 2024 (https://doi.org/10.1111/gcb.17528) and its associated BioProjects PRJNA1026538 (narwhal) and PRJNA1026863 (bowhead whale).
+
+***Note about processing beluga whale raw data***: Steps for processing beluga whale resequencing data correspond to Müller et al. (unpublished). The scripts been re-created here to be included in this current repository. See metadata file *sample_info_beluga.csv* for information about original sample IDs to go with raw data obtained from BioProject PRJNA984210 (Montana et al., 2024; https://doi.org/10.1111/eva.70058) and BioProject PRJNA1182041 (present study).
+
+***Summary of software used***: Scripts were executed on computing resources through the Digital Research Alliance of Canada (“DRAC”), the University of Manitoba biology server (“UM”; Ubuntu version 24.04.1), and in R (version 4.4.1). These are also noted below (with “DRAC”, “UM”, or “R”) for each corresponding step.
+
+### CODE details and workflow
+Scripts in this current repository are in the **code** folder which includes 6 subfolders: 1) processing raw beluga whale sequence data, 2) filtering and imputing SNPs for bowhead whale, narwhal, and beluga whale, 3) creating map & extracting environmental data, 4) preparing input files for gradient forest models, and 5) running gradient forest analyses and calculating genetic offsets. The 6th) folder is an additional one for recreating supplemental population structure plots.
+
+**01-belugawhale_resequencing_prep** - Processing raw beluga whale sequence data to create a vcf file of genetic variants. These scripts are prepared for running on DRAC and listed in order by steps. Software used: timmomatic, bowtie2, picard, GATK, platypus, bcftools. 
+-	*trim_raw_fastq.sh*: Trimming raw beluga whale sequence data with Trimmomatic v0.36.
+-	*map_bel_fastq.sh*: Indexing beluga reference genome and mapping samples to reference genome with Bowtie2 v2.5.2. This script was completed for each sample separately. If reproducing data at this step, see example for narwhal/bowhead to set up batch (https://github.com/edegreef/arctic-whales-resequencing/blob/main/sequence_data_prep/05-map_fastq.sh).
+-	*deduplicate_bel.sh*: Removing duplicate reads and add read group information with Picard v2.20.6, then index with samtools v1.9.
+-	*downsample_bel.sh*: Down-sampling 75 samples to mean coverage ~6x with GATKv4.1.2 to create even coverage across all samples. 
+-	*call_snps_bel.sh*: Calling variants with Platypus v0.8.1 (associated file *beluga_bam_list.txt* is list of bam file names to call into Platypus program). 
+-	*edit_ids_bel.sh*: Editing IDs in vcf file to remove file extensions in name (associated file *vcf_sample_id.txt* is list of edited sample IDs) 
+
+**02-SNP_prep** - Filtering and imputing SNPs for bowhead whale, narwhal, and beluga whale. These scripts were run on UM with Ubuntu. Software needed: vcftools, bcftools, and beagle.
+-	*snp_filter_pipeline_for_GF_bowhead.sh*: Filtering SNPs for the bowhead whale dataset. Associated file *scaf_min100kb_bowhead_RWmap* is a list of scaffolds that are at least 100kb in length (reference genome GCA_028564815.2), used to remove small scaffolds (<100kb) as a quality filter.
+-	*snp_filter_pipeline_for_GF_narwhal.sh*: Filtering SNPs for the narwhal dataset. Associated file *scaf_min100kb_narwhal* is a list of scaffolds that are at least 100kb in length (reference genome GCA_005190385.2), used to remove small scaffolds (<100kb) as a quality filter. Associated files *final_scaffolds_Xlinked_narwhal.txt* & *final_scaffolds_Ylinked_narwhal.txt* are lists of scaffolds identified to represent the X and Y chromosomes. These were used to remove sex chromosome from the narwhal dataset without chromosome-level identification in the reference. See de Greef et al. (2024) for detail on identifying these scaffolds. 
+-	*snp_filter_pipeline_for_GF_beluga.sh*: Filtering SNPs for the beluga whale dataset. Associated file *scaf_min100kb_beluga* is a list of scaffolds that are at least 100kb in length (reference genome GCA_029941455.3), used to remove small scaffolds (<100kb) as a quality filter. Although the same genome, the presented dataset here uses different scaffold names due to using a privately shared version of the reference before it was uploaded on NCBI. If re-creating mapped files and SNPs using the published GCA_029941455.3, then can use "samtools faidx" on the reference file to create an index (.fai) then sort by scaffold size to extract the list of scaffolds that are at least 100kb in length.
+-	*impute_and_thin_snps.sh*: Imputing SNPs with beagle and thinning dataset with vcftools. This is completed after running the *snp_filter_pipeline...* files. Associated file *remove_single_snp_scaf_notes.txt* is for the narwhal and beluga dataset specifically where there were a few scaffolds with only 1 SNPs which need to be removed prior to imputation. 
+
+**03-map_and_environmental_data** - Creating map with range shapefiles and extracting environmental data. These scripts were all completed through R.
+-	*combine_rangemaps.R*: Creating map with species’ ranges, primarily using R-packages raster, rworldmap, ggspatial. Site points are added in with associated data file *metadata/sample_locations_all_species.csv*.
+-	*extract_climate_data.R*: Extracting climate data from the Bio-ORACLE v2.2 dataset with R-package sdmpredictors. This script includes steps to download environmental rasters (both present and future RCPs), create maps of environmental data, and extract environmental data from a set of coordinates (also using *metadata/sample_locations_all_species.csv*), and saving environmental data in list by sample/individual.
+
+**04-gradientforest_input_prep** - Preparing input files for grafient forest models. This includes identifying putative adaptive SNPs in narwhal and beluga whale datasets (not applicable for bowhead whale) and then preparing inputs files including formatting. Genome scans were completed in R, and file prep was done on UM with Ubuntu. Steps are listed in order.
+-	*LEA_lfmm.R*: Running genome scans and LFMMs in R-package LEA for narwhal and beluga whale (not applicable to bowhead whale dataset due to lack of population differentiation and small sample size). The output list of SNPs was used in the next script to filter the SNP dataset. The LFMMs require .env files for each environmental variable by species (located in the *outputs/environmental_data/env_files* data folder). These values are also in species’ *outputs/environmental_data/env_data_by_sample..._csv* data files.
+-	*GF_snp_prep.sh*: Filtering SNP dataset for putative adaptive SNPs. The associated files are *narwhal_K3_top0.01_scan_4env_merged_snplist.txt* and *beluga_K6_top0.01_scan_4env_merged_snplist.txt* which are lists of scaffold & position for SNPs to keep (based on *LEA_lfmm.R*). The script *vcf2forR.sh* is called in this step and needs to be in working directory.
+-	*vcf2forR.sh*: Formatting file from vcf to format to use in gradient forest models. This is automatically called in *GF_snp_prep.sh* for narwhal and beluga whale datasets, but needs to be run separately on its own for bowhead whale dataset. 
+
+**05-gradientforest_models_offsets** - Running gradient forest analyses and calculating genetic offsets. This uses genotype input files created from scripts in the *04-gradientforest_input_prep* folder (data ouput files available in folder *outputs/intermediate_snps*), and the extracted environmental data from the *03-map_and_environmental_data* folder (data output files available in folder *outputs/environmental_data*). These scripts were completed in R. The script *gradientforest_whales_pipe.R* needs to be run before making boxplots and combining offsets.
+- *gradientforest_whales_pipe.R*: Pipeline for running gradient forest models with R-package gradientForest. This includes creating and plotting PCNM variables (with R-package marmap & vegan), running gradient forest (R-package gradientForest), plotting results (R-packages rworldmap, raster, tidyverse, ggspatial, tidyterra, terra, rnatrualearth), and estimating genetic offsets with predicted future environmental data (R-package sdmpredictors, gradientForest). Further supporting packages are listed in the beginning of this script. Associated file *sample_locations_all_species.csv* that was previously used for setting coordinates extracting climate data also has population assignment information for each species & site and is used in this script for plotting points on the final offset maps. 
+- *create_offset_boxplots.R*: Continuing script from *gradientforest_whales_pipe.R* and using same R-packages that specifically plots the genetic offset results by (sub)population in the form of boxplots. The raster (.tif) files used in this script were not restricted by species range shape files, as range distribution is an approximation and a few sampling sites were outside of the species range.
+- *combine_offsets.R*: Scaling and combining genetic offsets using the .tif files cropped by species range. Main R-packages are rnaturalearth, rworldmap, ggspatial, tidyterra, terra, raster, tidyverse.
+
+**pop_structure_supp** - Additional folder that is not required for preparing genetic offset models, but is included for creating admixture pie map for each species, and beluga whale PCAs that were used as supplemental information and figures. 
+- *admixture_pie_map.R*: Using qmatrix files from de Greef et al. (2024) and Müller et al. (unpublished) to create admixture pie maps to visualize population structure in each whale dataset. Associated files *qmatrix_narwhal_K3.csv*, *qmatrix_bowhead_K2.csv*, and *qmatrix_beluga_K6.csv* are included in the same folder.
+- *beluga_pca.R*: Creating PCAs to show support for beluga whale population structure using data file *beluga_snps.filtered.n140.imputed.thin.vcf.gz*. This creates plots to show PC1-4. Narwhal and bowhead whale PCAs are in de Greef et al. (2024) and are not presented directly in this study. 
